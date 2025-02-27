@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Stopwatch</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            outline: none;
+        }
+
+        body {
+            font-family: 'Arial', sans-serif;
+            height: 100vh;
+            background: radial-gradient(circle at center, #00ccff, #0066ff);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .outer-circle {
+            width: 280px;
+            height: 280px;
+            border-radius: 50%;
+            background: radial-gradient(circle, #fff, #0077ff);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0px 0px 30px rgba(0, 123, 255, 0.6), inset 0px 0px 20px rgba(0, 123, 255, 0.8);
+        }
+
+        .inner-circle {
+            width: 250px;
+            height: 250px;
+            border-radius: 50%;
+            background-color: #001f4d;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            box-shadow: inset 0px 0px 40px rgba(0, 255, 255, 0.4);
+            animation: pulse 2s infinite;
+        }
+
+        .text {
+            font-family: 'Courier New', monospace;
+            font-size: 48px;
+            letter-spacing: 2px;
+        }
+
+        .minute, .sec {
+            font-size: 34px;
+            color: #00e6e6;
+        }
+
+        .msec {
+            font-size: 34px;
+            color: #00b3ff;
+        }
+
+        @keyframes pulse {
+            0% {
+                box-shadow: inset 0 0 40px rgba(0, 255, 255, 0.4);
+            }
+            50% {
+                box-shadow: inset 0 0 60px rgba(0, 255, 255, 0.8);
+            }
+            100% {
+                box-shadow: inset 0 0 40px rgba(0, 255, 255, 0.4);
+            }
+        }
+
+        .button-wrapper {
+            margin-top: 30px;
+            display: flex;
+            gap: 15px;
+            text-align: center;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .button {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            border: 2px solid white;
+            background: linear-gradient(145deg, #003cb3, #0073ff);
+            color: white;
+            cursor: pointer;
+            font-size: 16px;
+            box-shadow: 0px 4px 10px rgba(0, 255, 255, 0.5);
+            transition: 0.4s;
+            transform: scale(1);
+        }
+
+        .button:hover {
+            background: linear-gradient(145deg, #0059b3, #0099ff);
+            box-shadow: 0px 8px 20px rgba(0, 255, 255, 0.8);
+            transform: scale(1.1);
+        }
+
+        .button:active {
+            transform: scale(0.95);
+        }
+
+        .laps {
+            margin-top: 20px;
+            max-width: 280px;
+            list-style: none;
+            padding: 0;
+        }
+
+        .lap-item {
+            background-color: rgba(0, 102, 255, 0.9);
+            color: white;
+            padding: 10px;
+            margin-top: 10px;
+            border-radius: 10px;
+            text-align: center;
+            box-shadow: 0px 4px 10px rgba(0, 123, 255, 0.4);
+        }
+
+        .lap-clear-button {
+            margin-top: 20px;
+            padding: 10px 30px;
+            background-color: #0059b3;
+            border: none;
+            color: white;
+            border-radius: 30px;
+            cursor: pointer;
+            transition: 0.3s;
+        
+        
+            border: 2px solid white;
+            background: linear-gradient(145deg, #003cb3, #0073ff);
+            color: white;
+            cursor: pointer;
+            font-size: 16px;
+            box-shadow: 0px 4px 10px rgba(0, 255, 255, 0.5);
+            transition: 0.4s;
+            transform: scale(1);
+        }
+
+        .lap-clear-button:hover {
+            background: linear-gradient(145deg, #0059b3, #0099ff);
+            box-shadow: 0px 8px 20px rgba(0, 255, 255, 0.8);
+            transform: scale(1.1);
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="watch">
+        <div class="outer-circle">   
+             <div class="inner-circle">
+                <span class="text minute">00:</span>
+                <span class="text sec">00.</span>
+                <span class="text msec">00</span>
+            </div>
+        </div>
+        <div class="button-wrapper">
+            <button class="button reset display-none">Reset</button>
+            <button class="button play">Start</button>
+            <button class="button lap display-none">Lap</button>
+        </div>
+    </div>
+
+    <ul class="laps"></ul>
+    <button class="lap-clear-button display-none">Clear Laps</button>
+</div>
+
+<script>
+const playButton = document.getElementsByClassName('play')[0];
+const lapButton = document.getElementsByClassName('lap')[0];
+const resetButton = document.getElementsByClassName('reset')[0];
+const clearLapsButton = document.getElementsByClassName('lap-clear-button')[0];
+const lapsContainer = document.querySelector('.laps');
+
+let timerInterval;
+let isPlaying = false;
+let startTime;
+let elapsedTime = 0;
+let lapCount = 0;
+
+const minuteText = document.querySelector('.minute');
+const secText = document.querySelector('.sec');
+const msecText = document.querySelector('.msec');
+
+// Update the timer display
+function updateTimer() {
+    const currentTime = Date.now();
+    const timeDifference = currentTime - startTime + elapsedTime;
+
+    const minutes = Math.floor(timeDifference / 60000);
+    const seconds = Math.floor((timeDifference % 60000) / 1000);
+    const milliseconds = Math.floor((timeDifference % 1000) / 10);
+
+    minuteText.textContent = (minutes < 10 ? '0' : '') + minutes + ' :';
+    secText.textContent = (seconds < 10 ? '0' : '') + seconds + ' .';
+    msecText.textContent = (milliseconds < 10 ? '0' : '') + milliseconds;
+}
+
+// Start or stop the timer
+const play = () => {
+    if (!isPlaying) {
+        startTime = Date.now();
+        timerInterval = setInterval(updateTimer, 10);
+        playButton.textContent = 'Pause';
+        lapButton.classList.remove('display-none');
+        resetButton.classList.remove('display-none');
+        clearLapsButton.classList.remove('display-none');
+        isPlaying = true;
+    } else {
+        clearInterval(timerInterval);
+        elapsedTime += Date.now() - startTime;
+        playButton.textContent = 'Start';
+        isPlaying = false;
+    }
+};
+
+// Reset the timer
+const resetTimer = () => {
+    clearInterval(timerInterval);
+    elapsedTime = 0;
+    lapCount = 0;
+    isPlaying = false;
+    minuteText.textContent = '00 :';
+    secText.textContent = '00 .';
+    msecText.textContent = '00';
+    playButton.textContent = 'Start';
+    lapButton.classList.add('display-none');
+    resetButton.classList.add('display-none');
+    clearLapsButton.classList.add('display-none');
+    lapsContainer.innerHTML = ''; // Remove all laps
+};
+
+// Record a lap
+const recordLap = () => {
+    lapCount++;
+    const lapItem = document.createElement('li');
+    lapItem.classList.add('lap-item');
+    lapItem.innerHTML = `
+        <span class="number">#${lapCount}</span>
+        <span class="time-stamp">${minuteText.textContent} ${secText.textContent} ${msecText.textContent}</span>
+    `;
+    lapsContainer.appendChild(lapItem);
+};
+
+// Clear laps
+const clearLaps = () => {
+    lapsContainer.innerHTML = '';
+    lapCount = 0;
+};
+
+// Link buttons to their respective actions
+playButton.addEventListener("click", play);
+resetButton.addEventListener("click", resetTimer);
+lapButton.addEventListener("click", recordLap);
+clearLapsButton.addEventListener("click", clearLaps);
+</script>
+
+</body>
+</html>
